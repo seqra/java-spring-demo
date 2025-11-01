@@ -1,0 +1,118 @@
+rules:
+  - id: pattern-concat.xss
+    languages:
+      - java
+    severity: ERROR
+    message: Controller returns an untrusted unvalidated data
+    metadata:
+      cwe: CWE-79
+      license: MIT
+      shortDescription: Controller returns an untrusted unvalidated data
+    patterns:
+      - pattern: |
+          @$ANNOTATION(...)
+          $RETURNTYPE $METHOD(..., $TYPE $PARAM,...) {
+            ...
+            return "..." + $PARAM + "...";
+            ...
+          }
+      - pattern-not: |
+          @$ANNOTATION(...)
+          $RETURNTYPE $METHOD(..., $TYPE $PARAM,...) {
+            ...
+            return "..." + HtmlUtils.htmlEscape($PARAM) + "...";
+            ...
+          }
+      - metavariable-pattern:
+          metavariable: $ANNOTATION
+          pattern-either:
+          - pattern: RequestMapping
+          - pattern: DeleteMapping
+          - pattern: GetMapping
+          - pattern: PatchMapping
+          - pattern: PostMapping
+          - pattern: PutMapping
+
+  - id: pattern.xss
+    languages:
+      - java
+    severity: ERROR
+    message: Controller returns an untrusted unvalidated data
+    metadata:
+      cwe: CWE-79
+      license: MIT
+      shortDescription: Controller returns an untrusted unvalidated data
+    patterns:
+      - pattern: |
+          @$ANNOTATION(...)
+          $RETURNTYPE $METHOD(..., $TYPE $PARAM,...) {
+            ...
+            return $PARAM;
+            ...
+          }
+      - pattern-not: |
+          @$ANNOTATION(...)
+          $RETURNTYPE $METHOD(..., $TYPE $PARAM,...) {
+            ...
+            return HtmlUtils.htmlEscape($PARAM);
+            ...
+          }
+      - metavariable-pattern:
+          metavariable: $ANNOTATION
+          pattern-either:
+          - pattern: RequestMapping
+          - pattern: DeleteMapping
+          - pattern: GetMapping
+          - pattern: PatchMapping
+          - pattern: PostMapping
+          - pattern: PutMapping
+  - id: taint.xss
+    languages:
+      - java
+    severity: ERROR
+    message: Controller returns an untrusted unvalidated data
+    metadata:
+      cwe: CWE-79
+      license: MIT
+      shortDescription: Controller returns an untrusted unvalidated data
+    mode: taint
+    options:
+      interfile: true
+    pattern-sources:
+    - patterns:
+      - focus-metavariable: $PARAM
+      - pattern: |
+          @$ANNOTATION(...)
+          $RETURNTYPE $METHOD(..., $TYPE $PARAM,...) {
+            ...
+          }
+      - metavariable-pattern:
+          metavariable: $ANNOTATION
+          pattern-either:
+          - pattern: RequestMapping
+          - pattern: DeleteMapping
+          - pattern: GetMapping
+          - pattern: PatchMapping
+          - pattern: PostMapping
+          - pattern: PutMapping
+    pattern-sanitizers:
+    - pattern: HtmlUtils.htmlEscape(...)
+    pattern-sinks:
+    - patterns:
+      - focus-metavariable: $SINK
+      - pattern: |
+          @$ANNOTATION(...)
+          $RETURNTYPE $METHOD(...) {
+            ...
+            return $SINK;
+            ...
+          }
+      - metavariable-pattern:
+          metavariable: $ANNOTATION
+          pattern-either:
+          - pattern: RequestMapping
+          - pattern: DeleteMapping
+          - pattern: GetMapping
+          - pattern: PatchMapping
+          - pattern: PostMapping
+          - pattern: PutMapping
