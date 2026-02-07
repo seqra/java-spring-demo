@@ -1,0 +1,30 @@
+name: OpenTaint Scan
+
+on:
+  push:
+    branches:
+      - main
+      - 'demo/**'
+  pull_request:
+    branches:
+      - main
+      - 'demo/**'
+
+jobs:
+  opentaint:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - uses: seqra/opentaint/github@github/v0
+        with:
+          upload-sarif: 'true'
