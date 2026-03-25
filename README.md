@@ -14,6 +14,22 @@ Intentionally vulnerable patterns, grouped by category:
 4. Constructor chains and field sensitivity
 5. Builder pattern and virtual method calls
 
+### Spring Indirect Data Flow
+
+**DI resolution**: DTO field access through DI-resolved service, configuration-sensitive resolver (unsafe vs hardened)
+
+**Cross-endpoint persistence**: taint flow through JPA save/load cycle, inter-procedural getter through DI-resolved `@Service`, column-level sensitivity, field-level sanitization in entity constructor, `@Service` field state across requests, mid-flow sanitizer
+
+**Async coroutines**: user-controlled URL through Kotlin coroutine scope
+
+## Tech Stack
+
+- Java 21 + Kotlin 1.9
+- Spring Boot 3.3 (Web, Thymeleaf, Data JPA)
+- FreeMarker 2.3
+- H2 (in-memory)
+- Gradle (Kotlin DSL)
+
 ## Scanning with OpenTaint
 
 Detect vulnerabilities using [OpenTaint](https://opentaint.org/):
