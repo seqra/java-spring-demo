@@ -20,7 +20,7 @@ Intentionally vulnerable patterns, grouped by category:
 
 **Cross-endpoint persistence**: taint flow through JPA save/load cycle, inter-procedural getter through DI-resolved `@Service`, column-level sensitivity, field-level sanitization in entity constructor, `@Service` field state across requests, mid-flow sanitizer
 
-**Async coroutines**: user-controlled URL through Kotlin coroutine scope
+**Async coroutines (SSRF)**: user-controlled URL fetched via `URI.toURL().openConnection()` inside a Kotlin `CoroutineScope.launch` on `Dispatchers.IO`, with taint flowing through a data-class DTO and a `CompletableDeferred` bridge
 
 ## Tech Stack
 
