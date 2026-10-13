@@ -1,0 +1,112 @@
+# Demo policy: access only your own notes.
+# Approved guards bind an unchanged selector with @P; selector mutation is out of scope.
+# Method security, the ownership helper, principal-scoped queries and fixed ownership are trusted.
+# Authentication uses a method search; ownership rules track request parameters to raw APIs.
+# Approved direct guards exempt their bound input; changes after authorization are not modeled.
+rules:
+  - id: spring.missing-note-ownership
+    languages:
+      - java
+    severity: WARNING
+    message: Raw note access lacks an approved guard for this ID; review runtime ownership checks
+    metadata:
+      category: authorization-standard
+      license: MIT
+      short-description: Note ownership check missing
+    mode: taint
+    options:
+      primitive-tracking: true
+    pattern-sources:
+      - patterns:
+          - pattern: |
+              @$MAPPING(...)
+              $METHOD(..., @$INPUT(...) $TYPE $UNTRUSTED, ...) { ... }
+          - metavariable-pattern:
+              metavariable: $MAPPING
+              pattern-either:
+                - pattern: RequestMapping
+                - pattern: GetMapping
+                - pattern: PostMapping
+                - pattern: PutMapping
+                - pattern: PatchMapping
+                - pattern: DeleteMapping
+          - metavariable-pattern:
+              metavariable: $INPUT
+              pattern-either:
+                - pattern: PathVariable
+                - pattern: RequestParam
+                - pattern: RequestBody
+                - pattern: RequestHeader
+                - pattern: CookieValue
+                - pattern: ModelAttribute
+          - pattern-not-inside: |
+              @PreAuthorize("@noteAuthorization.isOwner(#id, authentication)")
+              $METHOD(..., @P("id") @$INPUT(...) $TYPE $UNTRUSTED, ...) {
+                ...
+              }
+          - pattern-not-inside: |
+              @PreAuthorize("isAuthenticated() and @noteAuthorization.isOwner(#id, authentication)")
+              $METHOD(..., @P("id") @$INPUT(...) $TYPE $UNTRUSTED, ...) {
+                ...
+              }
+          - focus-metavariable: $UNTRUSTED
+    pattern-sinks:
+      - patterns:
+          - pattern-either:
+              - pattern: $SERVICE.readById($UNTRUSTED)
+              - pattern: $SERVICE.deleteById($UNTRUSTED)
+          - focus-metavariable: $UNTRUSTED
+  - id: spring.untrusted-note-owner
+    languages: [java]
+    severity: WARNING
+    message: Raw note access lacks an approved identity binding for this owner; review runtime ownership checks
+    metadata:
+      category: authorization-standard
+      license: MIT
+      short-description: Note owner is request-controlled
+    mode: taint
+    options:
+      primitive-tracking: true
+    pattern-sources:
+      - patterns:
+          - pattern: |
+              @$MAPPING(...)
+              $METHOD(..., @$INPUT(...) $TYPE $UNTRUSTED, ...) {
+                ...
+              }
+          - metavariable-pattern:
+              metavariable: $MAPPING
+              pattern-either:
+                - pattern: RequestMapping
+                - pattern: GetMapping
+                - pattern: PostMapping
+                - pattern: PutMapping
+                - pattern: PatchMapping
+                - pattern: DeleteMapping
+          - metavariable-pattern:
+              metavariable: $INPUT
+              pattern-either:
+                - pattern: PathVariable
+                - pattern: RequestParam
+                - pattern: RequestBody
+                - pattern: RequestHeader
+                - pattern: CookieValue
+                - pattern: ModelAttribute
+          - pattern-not-inside: |
+              @PreAuthorize("#ownerEmail == authentication.name")
+              $METHOD(..., @P("ownerEmail") @$INPUT(...) $TYPE $UNTRUSTED, ...) {
+                ...
+              }
+          - pattern-not-inside: |
+              @PreAuthorize("isAuthenticated() and #ownerEmail == authentication.name")
+              $METHOD(..., @P("ownerEmail") @$INPUT(...) $TYPE $UNTRUSTED, ...) {
+                ...
+              }
+          - focus-metavariable: $UNTRUSTED
+    pattern-sinks:
+      - patterns:
+          - pattern-either:
+              - pattern: $SERVICE.listByOwner($UNTRUSTED)
+              - pattern: $SERVICE.readOwnedById($ID, $UNTRUSTED)
+              - pattern: $SERVICE.deleteOwnedById($ID, $UNTRUSTED)
+          - focus-metavariable: $UNTRUSTED

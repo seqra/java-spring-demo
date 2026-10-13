@@ -27,4 +27,5 @@ jobs:
 
       - uses: seqra/opentaint/github@github/v0
         with:
+          rules-path: 'broken-access-control.yaml'
           upload-sarif: 'true'
